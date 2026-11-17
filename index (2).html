@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional ID Card Template Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Montserrat & Inter for exact geometric typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-card-heading {
+            font-family: 'Montserrat', 'Inter', sans-serif;
+        }
+        /* Realistic PVC card texture & lighting */
+        .pvc-realistic {
+            background: radial-gradient(circle at 30% 20%, #f9fafb 0%, #eff1f4 55%, #e5e8ed 100%);
+            box-shadow: 
+                0 22px 45px -12px rgba(15, 23, 42, 0.35),
+                0 4px 12px -2px rgba(15, 23, 42, 0.12),
+                inset 0 1px 1px rgba(255, 255, 255, 0.95),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.08);
+        }
+        .pvc-realistic::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.035;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            border-radius: inherit;
+        }
+        .pvc-flat {
+            background: #ffffff;
+            box-shadow: 0 12px 30px -8px rgba(15, 23, 42, 0.2);
+        }
+        /* Exact CR80 Physical Print Rules: 54mm x 85.6mm */
+        @media print {
+            @page {
+                size: 54mm 85.6mm;
+                margin: 0;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+                background: #ffffff !important;
+            }
+            body * {
+                visibility: hidden;
+            }
+            #printable-card, #printable-card * {
+                visibility: visible;
+            }
+            #printable-card {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 54mm !important;
+                height: 85.6mm !important;
+                border-radius: 3.18mm !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: #ffffff !important;
+                transform: none !important;
+                margin: 0 !important;
+            }
+            #printable-card::after {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 min-h-screen text-slate-200 flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 py-3.5 px-6 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-[#11223F] border border-blue-500/30 text-white p-2.5 rounded-xl shadow-lg flex items-center justify-center">
+                    <i class="fa-solid fa-id-card text-lg text-sky-400"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg font-bold tracking-tight text-white">CR80 PVC ID Studio</h1>
+                        <span class="text-[10px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-full">54mm × 85.6mm</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Exact Print-Scale Technician & Dealer ID Template</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2.5">
+                <button onclick="resetDefaults()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-2 rounded-lg text-xs font-semibold transition border border-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-right"></i> Reset
+                </button>
+                <button onclick="printCard()" class="bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition border border-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-print text-sky-400"></i> Print (54×85.6mm)
+                </button>
+                <button onclick="exportHighResPNG()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-lg shadow-blue-600/20 flex items-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> Export 300 DPI PNG
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto px-4 py-7 w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start flex-grow">
+        
+        <!-- Editor Controls (Left Column) -->
+        <div class="lg:col-span-7 bg-slate-900 rounded-2xl shadow-xl border border-slate-800 p-6 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-sky-400"></i> Card Details & Typography
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Exact geometric proportions calibrated to standard CR80 PVC cards.</p>
+                </div>
+                <!-- Surface Toggle -->
+                <div class="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 self-start">
+                    <button id="btn-pvc-realistic" onclick="setSurfaceMode('realistic')" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-slate-800 text-white shadow-sm transition">
+                        PVC Matte Finish
+                    </button>
+                    <button id="btn-pvc-flat" onclick="setSurfaceMode('flat')" class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-400 hover:text-white transition">
+                        Flat Print White
+                    </button>
+                </div>
+            </div>
+
+            <!-- Text Fields -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Employee Full Name</label>
+                    <input type="text" id="input-name" value="M. SATHEESWARAN" oninput="updateCard()" 
+                        class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm font-semibold text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Designation / Role</label>
+                    <input type="text" id="input-designation" value="TECHNICIAN" oninput="updateCard()" 
+                        class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm font-semibold text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Dealer / Agency Name</label>
+                    <input type="text" id="input-company" value="JUPITER AIR SYSTEM" oninput="updateCard()" 
+                        class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm font-semibold text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Dealer Subtitle</label>
+                    <input type="text" id="input-subtitle" value="Authorised Dealer" oninput="updateCard()" 
+                        class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm font-semibold text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+
+                <div class="space-y-1.5 md:col-span-2">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Principal Brand Wordmark</label>
+                    <input type="text" id="input-brand" value="BLUE STAR" oninput="updateCard()" 
+                        class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm font-semibold text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition">
+                </div>
+
+                <!-- Optional Custom Brand Logo Override -->
+                <div class="space-y-1.5 md:col-span-2 pt-1">
+                    <div class="flex items-center justify-between">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Custom Brand Logo Override (Optional)</label>
+                        <button id="btn-clear-logo" onclick="clearCustomLogo()" class="hidden text-[11px] font-semibold text-rose-400 hover:text-rose-300">
+                            Revert to Vector Blue Star
+                        </button>
+                    </div>
+                    <input type="file" id="brand-logo-file" accept="image/*" onchange="handleBrandLogoUpload(event)"
+                        class="w-full text-xs text-slate-400 bg-slate-950 border border-slate-800 rounded-lg p-1.5 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer">
+                </div>
+            </div>
+
+            <!-- Portrait Photo Upload & Framing -->
+            <div class="space-y-3 pt-4 border-t border-slate-800">
+                <div class="flex items-center justify-between">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-tie text-sky-400"></i> Passport Photo & Framing
+                    </label>
+                    <span class="text-[11px] text-slate-500">Aspect Ratio 3:4 Portrait</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center bg-slate-950/70 p-3.5 rounded-xl border border-slate-800/80">
+                    <div>
+                        <input type="file" id="photo-file" accept="image/*" onchange="handleImageUpload(event)"
+                            class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-500/15 file:text-sky-300 hover:file:bg-sky-500/25 cursor-pointer">
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-[11px] text-slate-400">
+                            <span>Zoom: <strong id="zoom-val" class="text-slate-200">100%</strong></span>
+                            <button onclick="resetPhotoFraming()" class="text-sky-400 hover:underline">Center</button>
+                        </div>
+                        <input type="range" id="photo-zoom" min="80" max="200" value="100" oninput="updatePhotoTransform()" class="w-full accent-sky-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="range" id="photo-x" min="-50" max="50" value="0" oninput="updatePhotoTransform()" title="Horizontal Position" class="w-full accent-sky-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                            <input type="range" id="photo-y" min="-50" max="50" value="0" oninput="updatePhotoTransform()" title="Vertical Position" class="w-full accent-sky-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Handwritten Blue-Ink Signature Pad -->
+            <div class="space-y-2.5 pt-4 border-t border-slate-800">
+                <div class="flex items-center justify-between">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-signature text-sky-400"></i> Handwritten Blue-Ink Signature
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <button onclick="restoreDefaultSignature()" class="text-[11px] font-semibold text-sky-400 hover:text-sky-300 px-2 py-1 rounded bg-sky-500/10">
+                            Sample Signature
+                        </button>
+                        <button onclick="clearSignaturePad()" class="text-[11px] font-semibold text-rose-400 hover:text-rose-300 px-2 py-1 rounded bg-rose-500/10">
+                            Clear Pad
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-1.5 border-2 border-slate-700 shadow-inner relative">
+                    <canvas id="signature-pad" width="520" height="120" class="w-full h-[84px] cursor-crosshair touch-none block rounded-lg bg-slate-50"></canvas>
+                    <span class="absolute bottom-2 right-3 text-[10px] font-medium text-slate-400 pointer-events-none select-none">Draw signature with mouse or touch</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Physical CR80 Preview (Right Column) -->
+        <div class="lg:col-span-5 flex flex-col items-center justify-center sticky top-20">
+            <div class="w-full max-w-[340px] flex items-center justify-between mb-3 px-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> True-Scale CR80 Preview
+                </span>
+                <span class="text-[11px] font-mono text-slate-400 bg-slate-900 border border-slate-800 px-2.5 py-0.5 rounded-md">
+                    54.0 × 85.6 mm
+                </span>
+            </div>
+
+            <!-- EXACT CR80 CARD CONTAINER (340px x 539px = exact 54 : 85.6 ratio, 20px = 3.18mm corner radius) -->
+            <div id="printable-card" class="w-[340px] h-[539px] rounded-[20px] pvc-realistic relative overflow-hidden select-none flex flex-col items-center text-[#1D1E20] transition-all duration-200">
+                
+                <!-- Top Header Block (Exact ~13% top margin) -->
+                <div class="w-full text-center mt-[66px] px-4">
+                    <h3 id="card-name" class="font-card-heading text-[20.5px] font-extrabold text-[#1C1D20] tracking-[-0.01em] uppercase leading-[1.12]">
+                        M. SATHEESWARAN
+                    </h3>
+                    <p id="card-designation" class="font-card-heading text-[18px] font-extrabold text-[#1C1D20] tracking-[0.01em] uppercase leading-[1.18] mt-[3px]">
+                        TECHNICIAN
+                    </p>
+                </div>
+
+                <!-- Passport Photo Frame (Exact ~38% width x ~33% height = 128px x 176px, rounded-xl, crisp 2px dark border) -->
+                <div class="mt-[12px] w-[128px] h-[176px] rounded-[13px] border-[2px] border-[#1A1B1E] bg-[#6FA8DC] overflow-hidden relative shadow-[inset_0_1px_4px_rgba(0,0,0,0.22)]">
+                    <img id="card-photo" 
+                         src="" 
+                         alt="Technician Portrait" 
+                         class="w-full h-full object-cover origin-center transition-transform duration-75">
+                </div>
+
+                <!-- Signature Overlay & Rule -->
+                <div class="w-[262px] flex flex-col items-center mt-[4px]">
+                    <!-- Rendered Signature Image -->
+                    <div class="h-[34px] w-[160px] flex items-end justify-center overflow-visible -mb-[4px] z-10">
+                        <img id="card-signature-img" src="" alt="Signature" class="max-h-[38px] max-w-[155px] object-contain pointer-events-none">
+                    </div>
+                    <!-- Crisp Horizontal Black Rule -->
+                    <div class="w-full h-[1.5px] bg-[#222326]"></div>
+                    <!-- Signature Label -->
+                    <span class="font-card-heading text-[14.5px] font-extrabold text-[#1D1E20] tracking-[-0.01em] mt-[4px]">
+                        Signature
+                    </span>
+                </div>
+
+                <!-- Dealer / Company Block -->
+                <div class="w-full text-center mt-[10px] px-4">
+                    <h4 id="card-company" class="font-card-heading text-[15px] font-extrabold text-[#1C1D20] tracking-[0.01em] uppercase leading-[1.2]">
+                        JUPITER AIR SYSTEM
+                    </h4>
+                    <p id="card-subtitle" class="font-card-heading text-[14.5px] font-bold text-[#1C1D20] tracking-[-0.01em] leading-[1.25] mt-[2px]">
+                        Authorised Dealer
+                    </p>
+                </div>
+
+                <!-- Exact Blue Star Footer Logo Block (Positioned ~7% from bottom) -->
+                <div class="mt-auto mb-[36px] flex items-center justify-center">
+                    <!-- Custom Uploaded Logo Override Container (Hidden by default) -->
+                    <img id="card-custom-brand-img" src="" alt="Brand Logo" class="hidden h-[42px] max-w-[232px] object-contain">
+
+                    <!-- Authentic Built-In Vector Blue Star Emblem & Wordmark -->
+                    <div id="card-vector-brand" class="flex items-center justify-center gap-[5px]">
+                        <!-- Left Star Emblem Box (42px x 42px, crisp #132544 border matching reference) -->
+                        <div class="w-[42px] h-[42px] border-[2.6px] border-[#132544] flex items-center justify-center bg-transparent shrink-0">
+                            <!-- Exact Single-Stroke Continuous Open-Junction Outline Star from Reference -->
+                            <svg id="bluestar-emblem-svg" viewBox="0 0 100 100" class="w-[34px] h-[34px]" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Continuous Woven Star Path: Top -> Left-Inner -> Left-Tip -> Bottom-Left-Inner -> Bottom-Left-Tip -> Across-to-Right-Tip -> Right-Inner -> Top -->
+                                <path d="M 50 9
+                                         L 39.4 39.2
+                                         L 7.5 39.5
+                                         L 33.1 58.3
+                                         L 23.5 88.6
+                                         L 92.5 39.5
+                                         L 60.6 39.2
+                                         L 50 9"
+                                      stroke="#132544"
+                                      stroke-width="6.4"
+                                      stroke-linecap="butt"
+                                      stroke-linejoin="miter"
+                                      stroke-miterlimit="10"/>
+                                <!-- Bottom-Right Arm Woven Path: Right-Inner -> Bottom-Right-Tip -> Bottom-Left-Inner -->
+                                <path d="M 60.6 39.2
+                                         L 66.9 58.3
+                                         L 76.5 88.6
+                                         L 46.8 67.3"
+                                      stroke="#132544"
+                                      stroke-width="6.4"
+                                      stroke-linecap="butt"
+                                      stroke-linejoin="miter"
+                                      stroke-miterlimit="10"/>
+                            </svg>
+                        </div>
+
+                        <!-- Right Solid Deep Navy Wordmark Box (186px x 42px, #132544 fill) -->
+                        <div class="w-[186px] h-[42px] bg-[#132544] flex items-center justify-center px-2.5 shrink-0">
+                            <!-- Official Wide-Stance Rounded-Corner Geometric BLUE STAR Vector Wordmark -->
+                            <svg id="bluestar-wordmark-svg" viewBox="0 0 330 44" class="w-[164px] h-[21px]" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- B -->
+                                <path d="M 8 10 H 29 C 34 10 36.8 12.2 36.8 15.8 C 36.8 18.6 35.1 20.4 32.3 21.2 C 35.7 22 37.8 24.2 37.8 27.6 C 37.8 31.8 34.6 34 29.2 34 H 8 Z M 13.6 14.4 V 19.6 H 27.6 C 30.1 19.6 31.4 18.6 31.4 17 C 31.4 15.3 30.1 14.4 27.6 14.4 Z M 13.6 23.6 V 29.6 H 28.2 C 31 29.6 32.4 28.5 32.4 26.6 C 32.4 24.7 31 23.6 28.2 23.6 Z" fill="#DFE4EC"/>
+                                <!-- L -->
+                                <path d="M 45.5 10 H 51.3 V 29.2 H 72 V 34 H 45.5 Z" fill="#DFE4EC"/>
+                                <!-- U -->
+                                <path d="M 78 10 H 83.8 V 24.2 C 83.8 28 86.4 29.8 92 29.8 C 97.6 29.8 100.2 28 100.2 24.2 V 10 H 106 V 24.6 C 106 31.2 101.2 34.5 92 34.5 C 82.8 34.5 78 31.2 78 24.6 Z" fill="#DFE4EC"/>
+                                <!-- E -->
+                                <path d="M 114.5 10 H 142 V 14.6 H 120.3 V 19.6 H 139.2 V 24 H 120.3 V 29.4 H 142.4 V 34 H 114.5 Z" fill="#DFE4EC"/>
+                                <!-- S -->
+                                <path d="M 164.5 16.6 C 164.5 12 168.8 9.5 178.2 9.5 C 186.2 9.5 190.8 11.7 191.5 16 H 185.6 C 185 14.2 182.6 13.4 178.2 13.4 C 173 13.4 170.4 14.5 170.4 16.4 C 170.4 18.2 172.2 19 177.2 19.5 L 182.6 20.1 C 189.6 20.9 192.6 23.2 192.6 27.3 C 192.6 32.2 187.8 34.5 178.4 34.5 C 169 34.5 164 32 163.5 27.2 H 169.4 C 170 29.5 172.8 30.6 178.4 30.6 C 184 30.6 186.6 29.4 186.6 27.4 C 186.6 25.5 184.8 24.7 179.8 24.2 L 174.4 23.6 C 167.6 22.8 164.5 20.6 164.5 16.6 Z" fill="#DFE4EC"/>
+                                <!-- T -->
+                                <path d="M 197.5 10 H 228 V 14.7 H 215.7 V 34 H 209.8 V 14.7 H 197.5 Z" fill="#DFE4EC"/>
+                                <!-- A -->
+                                <path d="M 243.5 10 H 250.4 L 265.5 34 H 258.8 L 255.6 28.6 H 238.4 L 235.2 34 H 228.6 Z M 247 15.2 L 241.1 24.4 H 252.9 Z" fill="#DFE4EC"/>
+                                <!-- R -->
+                                <path d="M 271.5 10 H 293.5 C 299.8 10 303.2 12.6 303.2 17.2 C 303.2 21 300.6 23.4 296 24.2 L 304 34 H 296.8 L 289.8 24.7 H 277.3 V 34 H 271.5 Z M 277.3 14.5 V 20.4 H 292.4 C 295.6 20.4 297.2 19.3 297.2 17.4 C 297.2 15.5 295.6 14.5 292.4 14.5 Z" fill="#DFE4EC"/>
+                            </svg>
+                            <!-- Dynamic Text Fallback when user edits Brand Wordmark to another brand -->
+                            <span id="card-brand" class="hidden font-card-heading text-[#DFE4EC] font-extrabold text-[15.5px] tracking-[0.14em] uppercase scale-x-110 whitespace-nowrap">
+                                BLUE STAR
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Quick Action Bar Below Card -->
+            <div class="mt-5 w-full max-w-[340px] grid grid-cols-2 gap-3">
+                <button onclick="exportHighResPNG()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-3 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2 text-xs">
+                    <i class="fa-solid fa-file-image"></i> Save 300 DPI PNG
+                </button>
+                <button onclick="printCard()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 text-xs">
+                    <i class="fa-solid fa-print text-sky-400"></i> Direct Print
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800/80 py-3.5 text-center text-xs text-slate-500 mt-10">
+        <p>Exact CR80 PVC Standard (54.0mm × 85.6mm / 2.125" × 3.375") &bull; 300 DPI Print-Ready Output</p>
+    </footer>
+
+    <!-- Application Logic -->
+    <script>
+        // Generate crisp studio sky-blue portrait illustration SVG as default photo
+        const DEFAULT_PORTRAIT_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="300" height="400">
+                <defs>
+                    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#6FA8DC"/>
+                        <stop offset="100%" stop-color="#5B95CC"/>
+                    </linearGradient>
+                    <linearGradient id="shirt" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#EEF2F6"/>
+                        <stop offset="50%" stop-color="#CBD5E1"/>
+                        <stop offset="100%" stop-color="#E2E8F0"/>
+                    </linearGradient>
+                </defs>
+                <rect width="300" height="400" fill="url(#bg)"/>
+                <!-- Shoulders & Collared Shirt -->
+                <path d="M25,400 C30,315 80,295 150,295 C220,295 270,315 275,400 Z" fill="url(#shirt)"/>
+                <path d="M108,296 L150,350 L192,296 L176,284 L150,316 L124,284 Z" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/>
+                <!-- Neck -->
+                <path d="M124,235 L124,302 C124,318 176,318 176,302 L176,235 Z" fill="#B57A56"/>
+                <path d="M124,240 C138,255 162,255 176,240 L176,258 C160,268 140,268 124,258 Z" fill="#9A6240" opacity="0.5"/>
+                <!-- Ears -->
+                <ellipse cx="97" cy="182" rx="9" ry="18" fill="#B57A56"/>
+                <ellipse cx="203" cy="182" rx="9" ry="18" fill="#B57A56"/>
+                <!-- Face -->
+                <path d="M100,145 C100,105 200,105 200,145 L197,195 C194,232 172,252 150,252 C128,252 106,232 103,195 Z" fill="#C48660"/>
+                <!-- Eyebrows -->
+                <path d="M114,158 Q128,152 141,158" stroke="#1E1B18" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+                <path d="M159,158 Q172,152 186,158" stroke="#1E1B18" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+                <!-- Eyes -->
+                <ellipse cx="128" cy="171" rx="8.5" ry="5.5" fill="#FFFFFF"/>
+                <circle cx="128" cy="171" r="4.2" fill="#1F1916"/>
+                <circle cx="129.5" cy="169.5" r="1.2" fill="#FFFFFF"/>
+                <ellipse cx="172" cy="171" rx="8.5" ry="5.5" fill="#FFFFFF"/>
+                <circle cx="172" cy="171" r="4.2" fill="#1F1916"/>
+                <circle cx="173.5" cy="169.5" r="1.2" fill="#FFFFFF"/>
+                <!-- Nose -->
+                <path d="M150,168 L146,196 Q150,200 155,196" stroke="#9A6240" stroke-width="3" stroke-linecap="round" fill="none"/>
+                <!-- Subtle Mustache & Lips -->
+                <path d="M134,211 Q150,206 166,211" stroke="#2B221E" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+                <path d="M137,220 Q150,225 163,220" stroke="#8C4A3C" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                <!-- Hair -->
+                <path d="M95,162 C88,125 102,82 148,80 C188,78 214,98 206,138 C203,152 198,158 196,155 C192,135 174,126 150,127 C124,128 106,138 102,162 Z" fill="#18191C"/>
+            </svg>
+        `);
+
+        // Signature Canvas State
+        const sigCanvas = document.getElementById('signature-pad');
+        const sigCtx = sigCanvas.getContext('2d');
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        function initSignaturePad() {
+            sigCtx.lineCap = 'round';
+            sigCtx.lineJoin = 'round';
+            sigCtx.strokeStyle = '#1B3B82'; // Authentic ballpoint blue ink
+            sigCtx.lineWidth = 3.2;
+
+            // Mouse events
+            sigCanvas.addEventListener('mousedown', startDraw);
+            sigCanvas.addEventListener('mousemove', draw);
+            window.addEventListener('mouseup', stopDraw);
+
+            // Touch events
+            sigCanvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = sigCanvas.getBoundingClientRect();
+                startDraw({
+                    offsetX: (touch.clientX - rect.left) * (sigCanvas.width / rect.width),
+                    offsetY: (touch.clientY - rect.top) * (sigCanvas.height / rect.height)
+                });
+            }, { passive: false });
+
+            sigCanvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (!isDrawing) return;
+                const touch = e.touches[0];
+                const rect = sigCanvas.getBoundingClientRect();
+                draw({
+                    offsetX: (touch.clientX - rect.left) * (sigCanvas.width / rect.width),
+                    offsetY: (touch.clientY - rect.top) * (sigCanvas.height / rect.height)
+                });
+            }, { passive: false });
+
+            sigCanvas.addEventListener('touchend', stopDraw);
+        }
+
+        function getCanvasCoords(e) {
+            if (e.offsetX !== undefined && e.target === sigCanvas) {
+                const rect = sigCanvas.getBoundingClientRect();
+                return {
+                    x: e.offsetX * (sigCanvas.width / rect.width),
+                    y: e.offsetY * (sigCanvas.height / rect.height)
+                };
+            }
+            return { x: e.offsetX, y: e.offsetY };
+        }
+
+        function startDraw(e) {
+            isDrawing = true;
+            const pos = getCanvasCoords(e);
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const pos = getCanvasCoords(e);
+            sigCtx.beginPath();
+            sigCtx.moveTo(lastX, lastY);
+            sigCtx.lineTo(pos.x, pos.y);
+            sigCtx.stroke();
+            lastX = pos.x;
+            lastY = pos.y;
+            syncSignatureToCard();
+        }
+
+        function stopDraw() {
+            if (isDrawing) {
+                isDrawing = false;
+                syncSignatureToCard();
+            }
+        }
+
+        function clearSignaturePad() {
+            sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+            syncSignatureToCard();
+        }
+
+        function restoreDefaultSignature() {
+            sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+            sigCtx.save();
+            sigCtx.strokeStyle = '#1B3B82';
+            sigCtx.lineWidth = 3.2;
+            sigCtx.lineCap = 'round';
+            sigCtx.lineJoin = 'round';
+
+            // Realistic handwritten signature strokes matching the reference card
+            sigCtx.beginPath();
+            // Outer loop D/M flourish
+            sigCtx.moveTo(195, 38);
+            sigCtx.bezierCurveTo(155, 42, 148, 76, 198, 76);
+            sigCtx.bezierCurveTo(232, 76, 236, 36, 204, 34);
+            // Vertical stem
+            sigCtx.moveTo(205, 30);
+            sigCtx.lineTo(198, 86);
+            // Connected cursive loops
+            sigCtx.moveTo(198, 84);
+            sigCtx.bezierCurveTo(212, 65, 224, 65, 222, 82);
+            sigCtx.bezierCurveTo(228, 68, 240, 68, 240, 81);
+            sigCtx.bezierCurveTo(246, 52, 256, 32, 254, 78);
+            sigCtx.bezierCurveTo(260, 64, 272, 64, 272, 78);
+            sigCtx.bezierCurveTo(280, 72, 292, 70, 305, 74);
+            // Underline flourish
+            sigCtx.moveTo(158, 96);
+            sigCtx.quadraticCurveTo(255, 86, 355, 84);
+            sigCtx.stroke();
+            sigCtx.restore();
+            syncSignatureToCard();
+        }
+
+        function syncSignatureToCard() {
+            document.getElementById('card-signature-img').src = sigCanvas.toDataURL('image/png');
+        }
+
+        function updateCard() {
+            document.getElementById('card-name').textContent = document.getElementById('input-name').value || 'M. SATHEESWARAN';
+            document.getElementById('card-designation').textContent = document.getElementById('input-designation').value || 'TECHNICIAN';
+            document.getElementById('card-company').textContent = document.getElementById('input-company').value || 'JUPITER AIR SYSTEM';
+            document.getElementById('card-subtitle').textContent = document.getElementById('input-subtitle').value || 'Authorised Dealer';
+
+            const rawBrand = (document.getElementById('input-brand').value || 'BLUE STAR').trim();
+            const brandSpan = document.getElementById('card-brand');
+            const brandSvg = document.getElementById('bluestar-wordmark-svg');
+            brandSpan.textContent = rawBrand;
+
+            if (rawBrand.toUpperCase() === 'BLUE STAR') {
+                brandSvg.classList.remove('hidden');
+                brandSpan.classList.add('hidden');
+            } else {
+                brandSvg.classList.add('hidden');
+                brandSpan.classList.remove('hidden');
+            }
+        }
+
+        function handleBrandLogoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const customImg = document.getElementById('card-custom-brand-img');
+                    customImg.src = e.target.result;
+                    customImg.classList.remove('hidden');
+                    document.getElementById('card-vector-brand').classList.add('hidden');
+                    document.getElementById('btn-clear-logo').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearCustomLogo() {
+            document.getElementById('brand-logo-file').value = '';
+            const customImg = document.getElementById('card-custom-brand-img');
+            customImg.src = '';
+            customImg.classList.add('hidden');
+            document.getElementById('card-vector-brand').classList.remove('hidden');
+            document.getElementById('btn-clear-logo').classList.add('hidden');
+        }
+
+        function setSurfaceMode(mode) {
+            const card = document.getElementById('printable-card');
+            const btnReal = document.getElementById('btn-pvc-realistic');
+            const btnFlat = document.getElementById('btn-pvc-flat');
+
+            if (mode === 'realistic') {
+                card.classList.remove('pvc-flat');
+                card.classList.add('pvc-realistic');
+                btnReal.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-slate-800 text-white shadow-sm transition';
+                btnFlat.className = 'px-3 py-1.5 rounded-md text-xs font-semibold text-slate-400 hover:text-white transition';
+            } else {
+                card.classList.remove('pvc-realistic');
+                card.classList.add('pvc-flat');
+                btnFlat.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-slate-800 text-white shadow-sm transition';
+                btnReal.className = 'px-3 py-1.5 rounded-md text-xs font-semibold text-slate-400 hover:text-white transition';
+            }
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('card-photo').src = e.target.result;
+                    resetPhotoFraming();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updatePhotoTransform() {
+            const zoom = document.getElementById('photo-zoom').value;
+            const x = document.getElementById('photo-x').value;
+            const y = document.getElementById('photo-y').value;
+            document.getElementById('zoom-val').textContent = zoom + '%';
+            const img = document.getElementById('card-photo');
+            img.style.transform = `scale(${zoom / 100}) translate(${x}px, ${y}px)`;
+        }
+
+        function resetPhotoFraming() {
+            document.getElementById('photo-zoom').value = 100;
+            document.getElementById('photo-x').value = 0;
+            document.getElementById('photo-y').value = 0;
+            updatePhotoTransform();
+        }
+
+        function resetDefaults() {
+            document.getElementById('input-name').value = 'M. SATHEESWARAN';
+            document.getElementById('input-designation').value = 'TECHNICIAN';
+            document.getElementById('input-company').value = 'JUPITER AIR SYSTEM';
+            document.getElementById('input-subtitle').value = 'Authorised Dealer';
+            document.getElementById('input-brand').value = 'BLUE STAR';
+            document.getElementById('photo-file').value = '';
+            document.getElementById('card-photo').src = DEFAULT_PORTRAIT_SVG;
+            clearCustomLogo();
+            resetPhotoFraming();
+            restoreDefaultSignature();
+            setSurfaceMode('realistic');
+            updateCard();
+        }
+
+        function printCard() {
+            window.print();
+        }
+
+        // Exact 300 DPI CR80 Canvas Renderer (638px x 1011px = 54mm x 85.6mm @ 300 DPI)
+        function exportHighResPNG() {
+            const W = 638;
+            const H = 1011;
+            const S = W / 340; // Exact scale factor from preview (340px -> 638px)
+
+            const canvas = document.createElement('canvas');
+            canvas.width = W;
+            canvas.height = H;
+            const ctx = canvas.getContext('2d');
+
+            // Helper for rounded rectangles
+            function roundRectPath(x, y, w, h, r) {
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.lineTo(x + w - r, y);
+                ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                ctx.lineTo(x + w, y + h - r);
+                ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                ctx.lineTo(x + r, y + h);
+                ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                ctx.lineTo(x, y + r);
+                ctx.quadraticCurveTo(x, y, x + r, y);
+                ctx.closePath();
+            }
+
+            // 1. Card Base (Rounded CR80 3.18mm = 37.5px at 300 DPI)
+            ctx.save();
+            roundRectPath(0, 0, W, H, 20 * S);
+            ctx.clip();
+
+            const isRealistic = document.getElementById('printable-card').classList.contains('pvc-realistic');
+            if (isRealistic) {
+                const grad = ctx.createRadialGradient(W * 0.3, H * 0.2, 20, W * 0.5, H * 0.5, H * 0.85);
+                grad.addColorStop(0, '#F9FAFB');
+                grad.addColorStop(0.55, '#EFF1F4');
+                grad.addColorStop(1, '#E5E8ED');
+                ctx.fillStyle = grad;
+            } else {
+                ctx.fillStyle = '#FFFFFF';
+            }
+            ctx.fillRect(0, 0, W, H);
+
+            // 2. Top Typography (Name & Designation)
+            const nameText = (document.getElementById('input-name').value || 'M. SATHEESWARAN').toUpperCase();
+            const desigText = (document.getElementById('input-designation').value || 'TECHNICIAN').toUpperCase();
+
+            ctx.fillStyle = '#1C1D20';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.font = `800 ${Math.round(20.5 * S)}px Montserrat, Inter, sans-serif`;
+            ctx.fillText(nameText, W / 2, 66 * S);
+
+            ctx.font = `800 ${Math.round(18 * S)}px Montserrat, Inter, sans-serif`;
+            ctx.fillText(desigText, W / 2, 92 * S);
+
+            // 3. Passport Photo Box (128x176 scaled)
+            const px = (340 - 128) / 2 * S;
+            const py = 126 * S;
+            const pw = 128 * S;
+            const ph = 176 * S;
+            const pr = 13 * S;
+
+            ctx.save();
+            roundRectPath(px, py, pw, ph, pr);
+            ctx.fillStyle = '#6FA8DC';
+            ctx.fill();
+            ctx.clip();
+
+            const photoImg = document.getElementById('card-photo');
+            if (photoImg && photoImg.complete && photoImg.naturalWidth > 0) {
+                const zoom = (parseFloat(document.getElementById('photo-zoom').value) || 100) / 100;
+                const offX = (parseFloat(document.getElementById('photo-x').value) || 0) * S;
+                const offY = (parseFloat(document.getElementById('photo-y').value) || 0) * S;
+
+                const imgRatio = photoImg.naturalWidth / photoImg.naturalHeight;
+                const boxRatio = pw / ph;
+                let drawW, drawH;
+                if (imgRatio > boxRatio) {
+                    drawH = ph;
+                    drawW = ph * imgRatio;
+                } else {
+                    drawW = pw;
+                    drawH = pw / imgRatio;
+                }
+                ctx.translate(px + pw / 2 + offX * zoom, py + ph / 2 + offY * zoom);
+                ctx.scale(zoom, zoom);
+                ctx.drawImage(photoImg, -drawW / 2, -drawH / 2, drawW, drawH);
+            }
+            ctx.restore();
+
+            // Photo Frame Border
+            ctx.save();
+            roundRectPath(px, py, pw, ph, pr);
+            ctx.lineWidth = 2 * S;
+            ctx.strokeStyle = '#1A1B1E';
+            ctx.stroke();
+            ctx.restore();
+
+            // 4. Signature & Rule
+            const ruleY = 340 * S;
+            const ruleW = 262 * S;
+            ctx.drawImage(sigCanvas, (W - 160 * S) / 2, ruleY - 34 * S, 160 * S, 38 * S);
+
+            ctx.fillStyle = '#222326';
+            ctx.fillRect((W - ruleW) / 2, ruleY, ruleW, 1.5 * S);
+
+            ctx.fillStyle = '#1D1E20';
+            ctx.font = `800 ${Math.round(14.5 * S)}px Montserrat, Inter, sans-serif`;
+            ctx.fillText('Signature', W / 2, ruleY + 6 * S);
+
+            // 5. Company & Authorised Dealer
+            const compText = (document.getElementById('input-company').value || 'JUPITER AIR SYSTEM').toUpperCase();
+            const subText = document.getElementById('input-subtitle').value || 'Authorised Dealer';
+
+            ctx.fillStyle = '#1C1D20';
+            ctx.font = `800 ${Math.round(15 * S)}px Montserrat, Inter, sans-serif`;
+            ctx.fillText(compText, W / 2, 376 * S);
+
+            ctx.font = `700 ${Math.round(14.5 * S)}px Montserrat, Inter, sans-serif`;
+            ctx.fillText(subText, W / 2, 397 * S);
+
+            // 6. Blue Star Footer Block
+            const footerY = (539 - 36 - 42) * S;
+            const customBrandImg = document.getElementById('card-custom-brand-img');
+
+            if (!customBrandImg.classList.contains('hidden') && customBrandImg.complete && customBrandImg.naturalWidth > 0) {
+                const maxH = 42 * S;
+                const maxW = 232 * S;
+                const ratio = customBrandImg.naturalWidth / customBrandImg.naturalHeight;
+                let drawH = maxH;
+                let drawW = drawH * ratio;
+                if (drawW > maxW) {
+                    drawW = maxW;
+                    drawH = drawW / ratio;
+                }
+                ctx.drawImage(customBrandImg, (W - drawW) / 2, footerY + (maxH - drawH) / 2, drawW, drawH);
+            } else {
+                const boxH = 42 * S;
+                const starBoxW = 42 * S;
+                const gap = 5 * S;
+                const brandBoxW = 186 * S;
+                const totalFooterW = starBoxW + gap + brandBoxW;
+                const startX = (W - totalFooterW) / 2;
+
+                // Left Star Box (2.6px crisp #132544 border)
+                ctx.strokeStyle = '#132544';
+                ctx.lineWidth = 2.6 * S;
+                ctx.strokeRect(startX + 1.3 * S, footerY + 1.3 * S, starBoxW - 2.6 * S, boxH - 2.6 * S);
+
+                // Draw Exact Single-Stroke Continuous Woven Blue Star inside Left Box
+                const iconSize = 34 * S;
+                const ix = startX + (starBoxW - iconSize) / 2;
+                const iy = footerY + (boxH - iconSize) / 2;
+                const u = iconSize / 100;
+
+                ctx.save();
+                ctx.translate(ix, iy);
+                ctx.strokeStyle = '#132544';
+                ctx.lineWidth = 6.4 * u;
+                ctx.lineCap = 'butt';
+                ctx.lineJoin = 'miter';
+                ctx.miterLimit = 10;
+
+                // Continuous Woven Star Path (Top -> Left-Inner -> Left-Tip -> Bottom-Left-Inner -> Bottom-Left-Tip -> Across-to-Right-Tip -> Right-Inner -> Top)
+                ctx.beginPath();
+                ctx.moveTo(50 * u, 9 * u);
+                ctx.lineTo(39.4 * u, 39.2 * u);
+                ctx.lineTo(7.5 * u, 39.5 * u);
+                ctx.lineTo(33.1 * u, 58.3 * u);
+                ctx.lineTo(23.5 * u, 88.6 * u);
+                ctx.lineTo(92.5 * u, 39.5 * u);
+                ctx.lineTo(60.6 * u, 39.2 * u);
+                ctx.lineTo(50 * u, 9 * u);
+                ctx.stroke();
+
+                // Bottom-Right Arm Woven Path (Right-Inner -> Bottom-Right-Tip -> Bottom-Left-Inner)
+                ctx.beginPath();
+                ctx.moveTo(60.6 * u, 39.2 * u);
+                ctx.lineTo(66.9 * u, 58.3 * u);
+                ctx.lineTo(76.5 * u, 88.6 * u);
+                ctx.lineTo(46.8 * u, 67.3 * u);
+                ctx.stroke();
+                ctx.restore();
+
+                // Right Navy Box
+                const brandX = startX + starBoxW + gap;
+                ctx.fillStyle = '#132544';
+                ctx.fillRect(brandX, footerY, brandBoxW, boxH);
+
+                // Wordmark: Render Exact Vector BLUE STAR SVG or Custom Text
+                const brandText = (document.getElementById('input-brand').value || 'BLUE STAR').trim().toUpperCase();
+                if (brandText === 'BLUE STAR') {
+                    const wmSvg = document.getElementById('bluestar-wordmark-svg');
+                    const xml = new XMLSerializer().serializeToString(wmSvg);
+                    const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(svgBlob);
+                    const wmImg = new Image();
+                    wmImg.onload = function() {
+                        const wmW = 164 * S;
+                        const wmH = 21 * S;
+                        ctx.drawImage(wmImg, brandX + (brandBoxW - wmW) / 2, footerY + (boxH - wmH) / 2, wmW, wmH);
+                        URL.revokeObjectURL(url);
+                        triggerCanvasDownload(canvas, nameText);
+                    };
+                    wmImg.src = url;
+                    ctx.restore();
+                    return;
+                } else {
+                    ctx.save();
+                    ctx.translate(brandX + brandBoxW / 2, footerY + boxH / 2);
+                    ctx.scale(1.12, 1);
+                    ctx.fillStyle = '#DFE4EC';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = `800 ${Math.round(15.5 * S)}px Montserrat, Inter, sans-serif`;
+                    ctx.fillText(brandText, 0, 1 * S);
+                    ctx.restore();
+                }
+            }
+
+            ctx.restore();
+            triggerCanvasDownload(canvas, nameText);
+        }
+
+        function triggerCanvasDownload(canvas, nameText) {
+            const link = document.createElement('a');
+            const safeName = nameText.replace(/[^a-z0-9]/gi, '_');
+            link.download = `${safeName}_CR80_300DPI.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('card-photo').src = DEFAULT_PORTRAIT_SVG;
+            initSignaturePad();
+            restoreDefaultSignature();
+            updateCard();
+        });
+    </script>
+</body>
+</html>
